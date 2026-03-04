@@ -1,14 +1,19 @@
 # Python
 .venv/
+venv/
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 *.egg-info/
+*.egg
 dist/
 build/
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+*.log
 
 # SQLite runtime files
 *.db
@@ -18,10 +23,23 @@ htmlcov/
 # Next.js
 strategylab/apps/web/.next/
 strategylab/apps/web/node_modules/
+strategylab/apps/web/.env.local
+strategylab/apps/web/.env*.local
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
 
 # macOS
 .DS_Store
+**/.DS_Store
 
 # Editor
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
