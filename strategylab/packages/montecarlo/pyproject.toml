@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "strategylab-montecarlo"
+version = "0.1.0"
+description = "StrategyLab Monte Carlo simulator"
+requires-python = ">=3.9"
+dependencies = [
+    "pandas>=2.1",
+    "numpy>=1.26",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
