@@ -11,8 +11,10 @@ from __future__ import annotations
 import importlib
 import logging
 from pathlib import Path
+from typing import Sequence
 
 import pandas as pd
+import yfinance as yf
 
 from strategylab.packages.core.data_loader import DataLoader
 from strategylab.packages.core.engine import BacktestEngine
@@ -65,6 +67,48 @@ def _build_execution_config(settings: ExecutionSettingsSchema) -> ExecutionConfi
     )
 
 
+def _fetch_data(
+    symbols: Sequence[str],
+    start: str,
+    end: str,
+) -> pd.DataFrame:
+    """Download OHLCV data from Yahoo Finance and return wide-format DataFrame.
+
+    Returns a DataFrame with MultiIndex columns (field, symbol) matching
+    the format produced by DataLoader.load().
+    """
+    tickers = yf.download(
+        tickers=list(symbols),
+        start=start,
+        end=end,
+        auto_adjust=True,
+        progress=False,
+    )
+
+    if tickers.empty:
+        raise ValueError(
+            f"No data returned from Yahoo Finance for {list(symbols)} "
+            f"between {start} and {end}."
+        )
+
+    # yfinance returns MultiIndex columns (field, symbol) when multiple
+    # tickers are requested, and flat columns when only one ticker is given.
+    if len(symbols) == 1:
+        sym = list(symbols)[0].upper()
+        tickers.columns = pd.MultiIndex.from_tuples(
+            [(col.lower(), sym) for col in tickers.columns],
+            names=["field", "symbol"],
+        )
+    else:
+        tickers.columns = pd.MultiIndex.from_tuples(
+            [(field.lower(), sym.upper()) for field, sym in tickers.columns],
+            names=["field", "symbol"],
+        )
+
+    tickers.index.name = "date"
+    return tickers
+
+
 def execute_run(request: RunRequest) -> tuple[BacktestResult, MetricsResult]:
     """Run a backtest for the given request and return result + metrics.
 
@@ -80,9 +124,7 @@ def execute_run(request: RunRequest) -> tuple[BacktestResult, MetricsResult]:
     strategy_module = _load_strategy(request.strategy_name)
     exec_cfg = _build_execution_config(request.execution_settings)
 
-    csv_path = _REPO_ROOT / request.csv_path
-    loader = DataLoader(csv_path)
-    data = loader.load(
+    data = _fetch_data(
         symbols=request.symbols,
         start=request.start_date,
         end=request.end_date,
